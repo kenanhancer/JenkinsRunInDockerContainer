@@ -3,6 +3,8 @@ services:
   jenkins:
     build:
       context: jenkins/
+    environment:
+      -HOSTNAME=172.22.5.148
     privileged: true
     user: root
     ports:
@@ -10,5 +12,4 @@ services:
       - 50000:50000
     container_name: jenkins
     volumes:
-      - /tmp/jenkins:/var/jenkins_home #Remember that, the tmp directory is designed to be wiped on system reboot.
       - /var/run/docker.sock:/var/run/docker.sock
