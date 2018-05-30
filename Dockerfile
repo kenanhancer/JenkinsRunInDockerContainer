@@ -9,10 +9,14 @@ USER root
 RUN apt-get update \
       && apt-get upgrade -y \
       && apt-get install -y sudo libltdl-dev \
-      && rm -rf /var/lib/apt/lists/* \
-	  && apt-get install -y python-pip \
-	  && pip install awscli --upgrade --user
+      && rm -rf /var/lib/apt/lists/* 
 RUN echo "jenkins ALL=NOPASSWD: ALL" >> /etc/sudoers
+
+RUN apt-get update \
+	  && apt-get install -y python-pip \
+	  && pip install awscli --upgrade 
+
+ENV PATH="~/.local/bin:$PATH"
 
 USER jenkins
 
