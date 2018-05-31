@@ -86,7 +86,7 @@ def pushToImage(containerName, tag, dockerUser, dockerPassword){
 def runApp(containerName, tag, dockerHubUser, httpPort){
     docker.withRegistry("https://${dockerHubUser}", 'ecr:eu-west-1:AWS_Credential') {
 		
-		sh "docker run -d --rm --privileged -u root -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/bin/docker -p $httpPort:$httpPort --name $containerName $dockerHubUser/$containerName:$tag"
+		sh "docker run -d --rm --privileged -u root -v /var/run/docker.sock:/var/run/docker.sock -v `which docker`:/bin/docker -p $httpPort:$httpPort --name $containerName $dockerHubUser/$containerName:$tag"
     }
 
     echo "Application started on port: ${httpPort} (http)"
