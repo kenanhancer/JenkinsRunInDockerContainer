@@ -1,7 +1,7 @@
-def CONTAINER_NAME="kenantest2"
+def CONTAINER_NAME="jenkins-in-docker-repository"
 def CONTAINER_TAG="latest${env.BUILD_NUMBER}"
 def DOCKER_HUB_USER="157584635219.dkr.ecr.eu-west-1.amazonaws.com"
-def HTTP_PORT="8090"
+def HTTP_PORT="8091"
 
 node {	
     stage('Initialize'){
@@ -22,7 +22,7 @@ node {
     stage('Clone repository') {
         /* Let's make sure we have the repository cloned to our workspace */
 
-        git url: 'https://github.com/kenanhancer/JenkinsDockerAwsEcrNodejsTest1.git'
+        git url: 'https://github.com/kenanhancer/JenkinsRunInDockerContainer.git'
     }
 	
     stage('Check Docker') {
@@ -86,7 +86,7 @@ def pushToImage(containerName, tag, dockerUser, dockerPassword){
 def runApp(containerName, tag, dockerHubUser, httpPort){
     docker.withRegistry("https://${dockerHubUser}", 'ecr:eu-west-1:AWS_Credential') {
 		
-		sh "docker run -d --rm -p $httpPort:$httpPort --name $containerName $dockerHubUser/$containerName:$tag"
+		sh "docker run -d --rm --privileged -u root -v /var/run/docker.sock:/var/run/docker.sock -v $(which docker):/bin/docker -p $httpPort:$httpPort --name $containerName $dockerHubUser/$containerName:$tag"
     }
 
     echo "Application started on port: ${httpPort} (http)"
