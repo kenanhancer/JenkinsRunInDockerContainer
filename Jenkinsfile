@@ -1,26 +1,32 @@
-def CONTAINER_NAME="kenantest"
-def CONTAINER_TAG="latest4"
+def CONTAINER_NAME="kenantest2"
+def CONTAINER_TAG="latest${env.BUILD_NUMBER}"
 def DOCKER_HUB_USER="157584635219.dkr.ecr.eu-west-1.amazonaws.com"
 def HTTP_PORT="8090"
 
 node {	
-
-
     stage('Initialize'){
-	def dockerHome = tool 'myDocker'
+	    def dockerHome = tool 'myDocker'
+	    
+	    try {
+            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS_Credential']]) {
+    	        env.AWS_ACCESS_KEY_ID = "$env.AWS_ACCESS_KEY_ID"
+    	        env.AWS_SECRET_ACCESS_KEY = "$env.AWS_SECRET_ACCESS_KEY"
+            }
+        } catch(error){}
 		
-	env.PATH = "${dockerHome}/bin:${env.PATH}"
+	    env.PATH = "${dockerHome}/bin:${env.PATH}"
+	
+        /*sh 'env'*/
     }
 
     stage('Clone repository') {
         /* Let's make sure we have the repository cloned to our workspace */
 
-        checkout scm
+        git url: 'https://github.com/kenanhancer/JenkinsDockerAwsEcrNodejsTest1.git'
     }
 	
     stage('Check Docker') {
-
-	checkDocker()
+	    checkDocker()
     }
 	
     stage("Image Prune"){
@@ -33,8 +39,13 @@ node {
 
     stage('Push to Docker Registry'){
 		sh "docker images"
+		
+	    try {
+    	    sh "aws ecr create-repository --repository-name $CONTAINER_NAME --region eu-west-1"
+        } catch(error){}
 	
         docker.withRegistry("https://${DOCKER_HUB_USER}", 'ecr:eu-west-1:AWS_Credential') {
+            
 			docker.image(CONTAINER_NAME).push(CONTAINER_TAG);
         }
     }
@@ -46,16 +57,16 @@ node {
 
 def checkDocker(){
     try {
-	echo "$PATH"
+	    echo "$PATH"
         sh "docker version"
-	sh "docker ps"
-	sh "docker images"
+	    sh "docker ps"
+	    sh "docker images"
     } catch(error){}
 }
 
 def imagePrune(containerName){
     try {
-	sh "docker image prune -f"
+	    sh "docker image prune -f"
         sh "docker stop $containerName"
     } catch(error){}
 }
@@ -75,8 +86,8 @@ def pushToImage(containerName, tag, dockerUser, dockerPassword){
 def runApp(containerName, tag, dockerHubUser, httpPort){
     docker.withRegistry("https://${dockerHubUser}", 'ecr:eu-west-1:AWS_Credential') {
 		
-		sh "docker run -d --rm -p $httpPort:$httpPort --name $containerName $dockerHubUser/$containerName"
+		sh "docker run -d --rm -p $httpPort:$httpPort --name $containerName $dockerHubUser/$containerName:$tag"
     }
-	
+
     echo "Application started on port: ${httpPort} (http)"
 }
